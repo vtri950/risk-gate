@@ -1,0 +1,16 @@
+# Example: drop this into your repo as .github/risk-gate.yml
+version: 1
+risk:
+  label: "needs-human-review"
+  risky_paths:
+    - "api/**"
+    - "auth/**"
+    - "mcp/**"
+    - "skills/**"
+    - "AGENTS.md"
+  risky_patterns:
+    - ".*migration.*\\.sql$"
+guardrails:
+  coverage_floor: 85
+  docs_allowed_dirs: ["docs/"]
+  skills_isolation: true

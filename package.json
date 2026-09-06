@@ -1,0 +1,15 @@
+{
+  "name": "risk-gate",
+  "version": "0.1.0",
+  "description": "Deterministic risk-based code review gate — DuckbillHQ pattern",
+  "bin": {
+    "risk-gate": "./scripts/risk-gate.sh",
+    "skills-auditor": "./auditor/skills-auditor.mjs"
+  },
+  "scripts": {
+    "audit": "node auditor/skills-auditor.mjs --heuristic",
+    "audit:llm": "node auditor/skills-auditor.mjs"
+  },
+  "keywords": ["code-review", "github-actions", "risk-based", "guardrails"],
+  "license": "MIT"
+}

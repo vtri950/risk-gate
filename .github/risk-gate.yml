@@ -1,0 +1,38 @@
+# risk-gate.yml — central config for all primitives
+# Copy to .github/risk-gate.yml in your repo
+
+version: 1
+
+risk:
+  label: "needs-human-review"
+  # Human review required if ANY of these match git diff --name-only
+  risky_paths:
+    - "api/**"
+    - "mcp/**"
+    - "auth/**"
+    - "src/design-system/**"
+    - "skills/**"
+    - ".opencode/**"
+    - "AGENTS.md"
+    - "**/migrations/**"
+  risky_patterns:
+    # regex matched against changed filename
+    - ".*\\.sql$"
+  # non-additive DB changes need manual annotation: add `BREAKING_MIGRATION` in PR body
+  require_human_if_pr_body_contains:
+    - "BREAKING_MIGRATION"
+
+guardrails:
+  coverage_floor: 85
+  docs_allowed_dirs:
+    - "docs/"
+    - ".github/"
+  docs_allowed_root_files:
+    - "README.md"
+    - "AGENTS.md"
+  skills_isolation: true
+
+auditor:
+  skills_dir: "skills"
+  # eval will flag skills where LLM already knows the instruction without the skill
+  model: "auto" # uses OPENAI_API_KEY / ANTHROPIC_API_KEY if present, else heuristic

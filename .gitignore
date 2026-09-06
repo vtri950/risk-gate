@@ -1,0 +1,5 @@
+node_modules/
+.trash-skills/
+coverage/
+*.log
+.DS_Store

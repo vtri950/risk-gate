@@ -1,0 +1,39 @@
+name: risk-gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./
+        with:
+          config: .github/risk-gate.yml
+          labeling: "true"
+
+  # Guardrails — run in parallel
+  guardrails:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docs gate
+        run: ./scripts/docs-gate.sh --config .github/risk-gate.yml
+      - name: Skills isolation
+        run: ./scripts/skills-isolation.sh
+      - name: Coverage gate (if coverage file exists)
+        run: |
+          if ls coverage*.json 2>/dev/null || ls coverage/coverage-final.json 2>/dev/null; then
+            ./scripts/coverage-gate.sh --floor 85
+          else
+            echo "No coverage file found — skipping (run tests first)"
+          fi

@@ -1,0 +1,68 @@
+name: "Risk Gate"
+description: "Deterministic risk-based PR review gate — DuckbillHQ pattern. Labels risky PRs and blocks auto-merge only when needed."
+branding:
+  icon: "shield"
+  color: "orange"
+
+inputs:
+  config:
+    description: "Path to risk-gate.yml"
+    required: false
+    default: ".github/risk-gate.yml"
+  base:
+    description: "Git base for diff (e.g. origin/main)"
+    required: false
+    default: "origin/main"
+  token:
+    description: "GitHub token for labeling"
+    required: false
+    default: ${{ github.token }}
+  labeling:
+    description: "Auto-add label if risky (true/false)"
+    required: false
+    default: "true"
+
+outputs:
+  risky:
+    description: "true if PR touches risky paths"
+    value: ${{ steps.gate.outputs.risky }}
+  label:
+    description: "Label that was evaluated"
+    value: ${{ steps.gate.outputs.label }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: gate
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+      run: |
+        set -euo pipefail
+        SCRIPT="${{ github.action_path }}/scripts/risk-gate.sh"
+        chmod +x "$SCRIPT"
+        # yq for yaml parsing if available
+        if ! command -v yq >/dev/null 2>&1; then
+          echo "yq not found, using fallback matcher"
+        fi
+        set +e
+        "$SCRIPT" --config "${{ inputs.config }}" --base "${{ inputs.base }}" --json > /tmp/risk-gate.json
+        EXIT_CODE=$?
+        set -e
+        cat /tmp/risk-gate.json
+        RISKY=$(python3 -c "import json; print(str(json.load(open('/tmp/risk-gate.json')).get('risky', False)).lower())")
+        LABEL=$(python3 -c "import json; print(json.load(open('/tmp/risk-gate.json')).get('label','needs-human-review'))")
+        echo "risky=$RISKY" >> "$GITHUB_OUTPUT"
+        echo "label=$LABEL" >> "$GITHUB_OUTPUT"
+        if [[ "${{ inputs.labeling }}" == "true" && "$RISKY" == "true" ]]; then
+          echo "Risky PR detected — adding label $LABEL"
+          gh pr edit "${{ github.event.pull_request.number }}" --add-label "$LABEL" 2>&1 || \
+          gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels" -f labels[]="$LABEL" 2>&1 || echo "::warning::Failed to add label"
+        fi
+        if [[ "$RISKY" == "true" ]]; then
+          echo "::notice::RISKY — requires human review ($LABEL)"
+        else
+          echo "::notice::SAFE — no human review required"
+        fi
+        # don't fail the job, let branch protection handle it
+        exit 0
