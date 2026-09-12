@@ -1,0 +1,70 @@
+# Example: drop into your repo as .github/workflows/copilot-mesh.yml
+# Copy scripts/risk-gate.sh + scripts/generate-copilot-instructions.sh into ./scripts/
+# Copy .github/risk-gate.yml and generate .github/copilot-instructions.md:
+#   ./scripts/generate-copilot-instructions.sh
+#
+# One-time GitHub setup (no LLM key):
+#   1. Repo Settings → Rules → Rulesets → New branch ruleset → target main →
+#      check "Automatically request Copilot code review" + "Review new pushes"
+#   2. Repo Settings → Copilot → Code review → Review effort (Lite/Balanced),
+#      Auto-approval globs for low-risk paths (e.g. docs/**, *.md)
+#   3. Repo Settings → General → Allow auto-merge + Automatically delete head branches
+#   4. Branch protection on main: require "mesh" + "gate" checks green;
+#      require human approval only when label needs-human-review is present
+#      (use ruleset condition or require the gate job to enforce via API)
+
+name: copilot-mesh
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+jobs:
+  mesh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Risk gate
+        id: gate
+        uses: vtri950/risk-gate@main
+        with:
+          config: .github/risk-gate.yml
+          labeling: "true"
+      - name: Mesh orchestration
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RISKY: ${{ steps.gate.outputs.risky }}
+          RISK_LABEL: ${{ steps.gate.outputs.label }}
+        run: |
+          set -euo pipefail
+          PR="$PR_NUMBER"
+          SAFE_LABEL="copilot-safe"
+          LABEL="${RISK_LABEL:-needs-human-review}"
+          MARKER="<!-- risk-gate-mesh -->"
+          gh label create "$SAFE_LABEL" --color "0E8A16" --description "Low-risk: Copilot reviewed, auto-merge eligible" 2>/dev/null || true
+          if gh pr view "$PR" --json comments -q '.comments[].body' 2>/dev/null | grep -q "$MARKER"; then ALREADY=true; else ALREADY=false; fi
+          if [[ "$RISKY" == "true" ]]; then
+            gh pr edit "$PR" --add-label "$LABEL" || true
+            gh pr edit "$PR" --remove-label "$SAFE_LABEL" || true
+            if [[ "$ALREADY" == false ]]; then
+              gh pr comment "$PR" --body "$MARKER
+          ### Pair Reviewer — human needed (risk-gate: RISKY)
+          Copilot requested for correctness. You own design, risk, and merge decision." || true
+            fi
+          else
+            gh pr edit "$PR" --remove-label "$LABEL" || true
+            gh pr edit "$PR" --add-label "$SAFE_LABEL" || true
+            if [[ "$ALREADY" == false ]]; then
+              gh pr comment "$PR" --body "$MARKER
+          ### Copilot mesh — low-risk (risk-gate: SAFE)
+          Copilot review requested. Auto-merge engages once checks are green." || true
+            fi
+            gh pr merge "$PR" --auto --squash --delete-branch || true
+          fi
+      - name: Instructions drift check
+        run: ./scripts/generate-copilot-instructions.sh --check

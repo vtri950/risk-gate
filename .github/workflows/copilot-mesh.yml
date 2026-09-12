@@ -1,0 +1,112 @@
+name: copilot-mesh
+
+# Cosmos-style mesh on native GitHub + Copilot. No LLM key required.
+# Requires (one-time per repo, see README):
+#   1. Settings → Rules → Rulesets → Automatically request Copilot code review
+#   2. Settings → Copilot → Code review → custom instructions (this repo generates
+#      .github/copilot-instructions.md from .github/risk-gate.yml)
+#   3. Branch protection + auto-merge enabled
+#
+# What this does per PR:
+#   SAFE  (no risky paths) → label copilot-safe, post guidance, enable auto-merge
+#   RISKY (risky paths)    → label needs-human-review, post Pair Reviewer checklist,
+#                            leave Copilot review to the native Ruleset
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  mesh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Risk gate (deterministic Risk Analyzer)
+        id: gate
+        uses: ./
+        with:
+          config: .github/risk-gate.yml
+          labeling: "true"
+
+      - name: Copilot mesh orchestration
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RISKY: ${{ steps.gate.outputs.risky }}
+          RISK_LABEL: ${{ steps.gate.outputs.label }}
+        run: |
+          set -euo pipefail
+          PR="$PR_NUMBER"
+          RISKY_OUT="$RISKY"
+          LABEL="${RISK_LABEL:-needs-human-review}"
+          SAFE_LABEL="copilot-safe"
+          MARKER="<!-- risk-gate-mesh -->"
+
+          echo "risky=$RISKY_OUT label=$LABEL pr=$PR"
+
+          # ensure labels exist (idempotent, ignore errors)
+          gh label create "$SAFE_LABEL" --color "0E8A16" --description "Low-risk: Copilot reviewed, auto-merge eligible" 2>/dev/null || true
+          gh label create "$LABEL" --color "D93F0B" --description "High-risk: requires human review" 2>/dev/null || true
+
+          # skip if we already posted our guidance comment (avoid spam on every push)
+          if gh pr view "$PR" --json comments -q '.comments[].body' 2>/dev/null | grep -q "$MARKER"; then
+            echo "mesh comment already present — updating labels only"
+            ALREADY_POSTED=true
+          else
+            ALREADY_POSTED=false
+          fi
+
+          # best-effort: request Copilot review via API (native Ruleset is primary path)
+          # Login varies by org (copilot / copilot-pull-request-reviewer); failures are non-fatal.
+          request_copilot() {
+            gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/requested_reviewers" \
+              -f "reviewers[]=copilot" 2>/dev/null || \
+            gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/requested_reviewers" \
+              -f "reviewers[]=copilot-pull-request-reviewer" 2>/dev/null || \
+            echo "::warning::Could not request Copilot via API — rely on Ruleset auto-review"
+          }
+
+          if [[ "$RISKY_OUT" == "true" ]]; then
+            echo "::notice::RISKY — routing to human + Copilot deep review"
+            gh pr edit "$PR" --add-label "$LABEL" 2>&1 || true
+            gh pr edit "$PR" --remove-label "$SAFE_LABEL" 2>&1 || true
+            request_copilot || true
+            if [[ "$ALREADY_POSTED" == false ]]; then
+              gh pr comment "$PR" --body "$MARKER
+          ### Pair Reviewer — human needed (risk-gate: RISKY)
+
+          Copilot has been requested for line-by-line correctness. You own the judgment calls.
+
+          **1. Design** — does this change match the ticket intent? Any scope creep?
+          **2. Risk** — matched risky path (see \`$LABEL\` label + risk-gate job output). Data loss / auth / migration impact?
+          **3. Correctness** — check Copilot findings below; verify security + rollback plan.
+          **4. Tests** — coverage floor holds? New branches covered?
+
+          Reply \`Safe to merge: YES/NO\` — Copilot instructions + memory update from your feedback." 2>&1 || echo "::warning::Failed to post RISKY comment"
+            fi
+          else
+            echo "::notice::SAFE — Copilot review + auto-merge eligible"
+            gh pr edit "$PR" --remove-label "$LABEL" 2>&1 || true
+            gh pr edit "$PR" --add-label "$SAFE_LABEL" 2>&1 || true
+            request_copilot || true
+            if [[ "$ALREADY_POSTED" == false ]]; then
+              gh pr comment "$PR" --body "$MARKER
+          ### Copilot mesh — low-risk (risk-gate: SAFE)
+
+          No risky paths matched. Copilot review requested for objective bugs only.
+          Auto-merge will engage once checks are green. Humans: merge without line-by-line re-read unless Copilot flags high-severity findings." 2>&1 || echo "::warning::Failed to post SAFE comment"
+            fi
+            # enable auto-merge (requires repo auto-merge enabled + branch protection passing)
+            gh pr merge "$PR" --auto --squash --delete-branch 2>&1 || echo "::warning::Auto-merge not enabled or blocked — merge manually once green"
+          fi
+
+      - name: Instructions drift check (Memory Manager in sync?)
+        run: ./scripts/generate-copilot-instructions.sh --check
