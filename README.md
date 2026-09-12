@@ -11,6 +11,7 @@ No AI for routing — shell scripts + GitHub labels. Expensive guardrails buy ba
 | Primitive | Script | What it does |
 |---|---|---|
 | **#1 Risk Gate** | `scripts/risk-gate.sh` + `action.yml` | Labels `needs-human-review` only if diff touches `api/mcp/auth/design-system/skills/migrations` |
+| **#1b Copilot Mesh** | `.github/workflows/copilot-mesh.yml` + `scripts/generate-copilot-instructions.sh` | Cosmos-style orchestration on native Copilot: SAFE → `copilot-safe` + auto-merge, RISKY → Pair Reviewer checklist. No LLM key |
 | **#2a Docs Gate** | `scripts/docs-gate.sh` | Fails if `*.md` outside `docs/` — prevents context poisoning |
 | **#2b Skills Isolation** | `scripts/skills-isolation.sh` | Forces `skills/`, `AGENTS.md`, `.opencode/` into solo PRs |
 | **#2c Coverage Gate** | `scripts/coverage-gate.sh --floor 85` | Enforces 85% floor |
@@ -49,6 +50,31 @@ Repo → Settings → Branches → Require status checks + **Require pull reques
 In practice: add a rule via `action.yml` output `risky`:
 - If `risky == true` → require 1 approval
 - If `risky == false` → auto-merge allowed (1h median)
+
+## Copilot Mesh (Cosmos-style, no LLM key)
+
+Deterministic Risk Analyzer + native Copilot Deep Reviewer + auto-merge. Your repos already have Copilot — this is the glue.
+
+```bash
+# 1. Generate Copilot memory from your risk policy
+./scripts/generate-copilot-instructions.sh
+# → .github/copilot-instructions.md (Copilot reads this on every review)
+
+# 2. Workflow is already wired: .github/workflows/copilot-mesh.yml
+# SAFE  → copilot-safe label + guidance comment + gh pr merge --auto
+# RISKY → needs-human-review label + Pair Reviewer checklist comment
+
+# 3. Re-run generator after changing .github/risk-gate.yml
+# CI fails on drift via --check
+```
+
+One-time GitHub setup per repo (5 min):
+1. Settings → Rules → Rulesets → New branch ruleset → target `main` → ✅ `Automatically request Copilot code review` + `Review new pushes`
+2. Settings → Copilot → Code review → effort `Lite` (cheap) or `Balanced` (deep), Auto-approval globs for low-risk (`docs/**`, `*.md`)
+3. Settings → General → ✅ Allow auto-merge + auto-delete head branches
+4. Copy into any repo: `scripts/risk-gate.sh`, `scripts/generate-copilot-instructions.sh`, `.github/risk-gate.yml`, `examples/copilot-mesh.yml.example` → `.github/workflows/copilot-mesh.yml`
+
+See `examples/copilot-mesh.yml.example` for the portable copy-paste version.
 
 ## Config
 
