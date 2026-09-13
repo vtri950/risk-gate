@@ -20,8 +20,8 @@ High-risk paths (any match requires human review):
 - auth/**
 - src/design-system/**
 - skills/**
-- AGENTS.md
 - .opencode/**
+- AGENTS.md
 - **/migrations/**
 
 High-risk filename patterns (regex):

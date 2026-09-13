@@ -56,12 +56,12 @@ if [[ -f "$CONFIG" ]]; then
     mapfile -t RISKY_PATTERNS < <(yq -r '.risk.risky_patterns[]?' "$CONFIG")
   else
     # minimal fallback without yq: use defaults
-    RISKY_PATHS=("api/**" "mcp/**" "auth/**" "src/design-system/**" "skills/**" "AGENTS.md" ".opencode/**" "**/migrations/**")
+    RISKY_PATHS=("api/**" "mcp/**" "auth/**" "src/design-system/**" "skills/**" ".opencode/**" "AGENTS.md" "**/migrations/**")
     RISKY_PATTERNS=(".*\\.sql$")
   fi
 else
   echo "warn: config $CONFIG not found, using defaults" >&2
-  RISKY_PATHS=("api/**" "mcp/**" "auth/**" "src/design-system/**" "skills/**" "AGENTS.md" ".opencode/**" "**/migrations/**")
+  RISKY_PATHS=("api/**" "mcp/**" "auth/**" "src/design-system/**" "skills/**" ".opencode/**" "AGENTS.md" "**/migrations/**")
   RISKY_PATTERNS=(".*\\.sql$")
 fi
 
