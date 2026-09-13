@@ -8,10 +8,11 @@ Human reviewers own system design judgment — you own correctness.
 
 ## 1. Risk routing (authoritative)
 
-This repo uses deterministic risk gating. The [needs-human-review] label is set by CI (risk-gate.sh):
+This repo uses deterministic risk gating with tiers P0/P1/P2. Labels are set by CI (risk-gate.sh):
 
-- If PR has label [needs-human-review] → HIGH-RISK. Review deeply: correctness, security, data loss, auth, migrations.
-- If PR has label [copilot-safe] (or no risk label) → LOW-RISK. Review for objective bugs only. Keep comments minimal.
+- If PR has label [needs-human-review] (P0) → HIGH-RISK. Review deeply: correctness, security, data loss, auth, migrations.
+- If PR has label [needs-human-advisory] (P1) → ADVISORY. Core logic changed: review bugs only, one pass, non-blocking.
+- If PR has label [copilot-safe] or no risk label (P2) → LOW-RISK. Review for objective bugs only. Keep comments minimal.
 
 High-risk paths (any match requires human review):
 

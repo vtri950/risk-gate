@@ -56,10 +56,11 @@ TMP_OUT=$(mktemp)
   printf '%s\n' ''
   printf '%s\n' '## 1. Risk routing (authoritative)'
   printf '%s\n' ''
-  printf '%s\n' "This repo uses deterministic risk gating. The [$LABEL] label is set by CI (risk-gate.sh):"
+  printf '%s\n' "This repo uses deterministic risk gating with tiers P0/P1/P2. Labels are set by CI (risk-gate.sh):"
   printf '%s\n' ''
-  printf '%s\n' "- If PR has label [$LABEL] → HIGH-RISK. Review deeply: correctness, security, data loss, auth, migrations."
-  printf '%s\n' '- If PR has label [copilot-safe] (or no risk label) → LOW-RISK. Review for objective bugs only. Keep comments minimal.'
+  printf '%s\n' "- If PR has label [$LABEL] (P0) → HIGH-RISK. Review deeply: correctness, security, data loss, auth, migrations."
+  printf '%s\n' '- If PR has label [needs-human-advisory] (P1) → ADVISORY. Core logic changed: review bugs only, one pass, non-blocking.'
+  printf '%s\n' '- If PR has label [copilot-safe] or no risk label (P2) → LOW-RISK. Review for objective bugs only. Keep comments minimal.'
   printf '%s\n' ''
   printf '%s\n' 'High-risk paths (any match requires human review):'
   printf '%s\n' ''

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
+# NOTE: no `set -u` — bash 3.2 (macOS) treats empty arrays as unbound.
 # plan-link-gate.sh — deterministic plan-conformance gate (no LLM key)
 # Idea: review shifts to planning, not the PR stage. A PR that implements
 # a plan must link that plan, so reviewers (human or Copilot) can check
@@ -64,29 +65,32 @@ if [[ -f "$CONFIG" ]] && command -v yq >/dev/null 2>&1; then
   [[ ${#_el[@]} -gt 0 ]] && EXEMPT_LABELS=("${_el[@]}")
 fi
 
-# --- PR body: explicit arg > file > gh API > env ---
+# --- PR body: explicit arg > file > live gh API > stale event payload ---
+# NOTE: gh first — GITHUB_EVENT_PATH is frozen at event time, so reruns after a
+# PR-body edit would otherwise keep failing on the stale body.
 if [[ -z "$PR_BODY" && -n "$PR_BODY_FILE" && -f "$PR_BODY_FILE" ]]; then
   PR_BODY=$(cat "$PR_BODY_FILE")
-fi
-if [[ -z "$PR_BODY" && -n "${GITHUB_EVENT_PATH:-}" && -f "$GITHUB_EVENT_PATH" ]]; then
-  PR_BODY=$(python3 -c "import json,os; print(json.load(open(os.environ['GITHUB_EVENT_PATH'])).get('pull_request',{}).get('body','') or '')" 2>/dev/null || echo "")
 fi
 if [[ -z "$PR_BODY" && -n "$PR_NUMBER" ]] && command -v gh >/dev/null 2>&1; then
   PR_BODY=$(gh pr view "$PR_NUMBER" --json body -q '.body // ""' 2>/dev/null || echo "")
 fi
+if [[ -z "$PR_BODY" && -n "${GITHUB_EVENT_PATH:-}" && -f "$GITHUB_EVENT_PATH" ]]; then
+  PR_BODY=$(python3 -c "import json,os; print(json.load(open(os.environ['GITHUB_EVENT_PATH'])).get('pull_request',{}).get('body','') or '')" 2>/dev/null || echo "")
+fi
 
 # --- changed files ---
 CHANGED=()
+read_lines() { local __a="$1" __l; eval "$__a=()"; while IFS= read -r __l; do [[ -n "$__l" ]] || continue; eval "$__a+=(\"\$__l\")"; done; return 0; }
 if [[ -n "$FILES_OVERRIDE" ]]; then
   read -ra CHANGED <<< "$FILES_OVERRIDE"
 else
   if git rev-parse --verify "$BASE" >/dev/null 2>&1; then
-    mapfile -t CHANGED < <(git diff --name-only --diff-filter=ACMRT "$BASE"...HEAD 2>/dev/null || git diff --name-only HEAD~1 2>/dev/null || echo "")
+    read_lines CHANGED < <(git diff --name-only --diff-filter=ACMRT "$BASE"...HEAD 2>/dev/null || git diff --name-only HEAD~1 2>/dev/null || echo "")
   else
-    mapfile -t CHANGED < <(git diff --name-only HEAD~1 2>/dev/null || git diff --name-only --cached 2>/dev/null || echo "")
+    read_lines CHANGED < <(git diff --name-only HEAD~1 2>/dev/null || git diff --name-only --cached 2>/dev/null || echo "")
   fi
-  if [[ ${#CHANGED[@]} -eq 0 || -z "${CHANGED[0]:-}" ]]; then
-    mapfile -t CHANGED < <(git diff --name-only 2>/dev/null || echo "")
+  if [[ ${#CHANGED[@]} -eq 0 ]]; then
+    read_lines CHANGED < <(git diff --name-only 2>/dev/null || echo "")
   fi
 fi
 FILTERED=()

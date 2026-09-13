@@ -1,5 +1,6 @@
 node_modules/
 .trash-skills/
 coverage/
+audit/
 *.log
 .DS_Store
