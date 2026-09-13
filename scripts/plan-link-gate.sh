@@ -56,11 +56,11 @@ if [[ -f "$CONFIG" ]] && command -v yq >/dev/null 2>&1; then
   [[ -n "$v" ]] && REQUIRE_LINK="$v"
   v=$(yq -r '.plan.min_lines_for_plan // 0' "$CONFIG" 2>/dev/null || echo "0")
   [[ -n "$v" ]] && MIN_LINES_FOR_PLAN="$v"
-  mapfile -t _pp < <(yq -r '.plan.plan_paths[]? // empty' "$CONFIG" 2>/dev/null || true)
+  mapfile -t _pp < <(yq -r '.plan.plan_paths[]?' "$CONFIG" 2>/dev/null || true)
   [[ ${#_pp[@]} -gt 0 ]] && PLAN_PATHS=("${_pp[@]}")
-  mapfile -t _ep < <(yq -r '.plan.exempt_paths[]? // empty' "$CONFIG" 2>/dev/null || true)
+  mapfile -t _ep < <(yq -r '.plan.exempt_paths[]?' "$CONFIG" 2>/dev/null || true)
   [[ ${#_ep[@]} -gt 0 ]] && EXEMPT_PATHS=("${_ep[@]}")
-  mapfile -t _el < <(yq -r '.plan.exempt_labels[]? // empty' "$CONFIG" 2>/dev/null || true)
+  mapfile -t _el < <(yq -r '.plan.exempt_labels[]?' "$CONFIG" 2>/dev/null || true)
   [[ ${#_el[@]} -gt 0 ]] && EXEMPT_LABELS=("${_el[@]}")
 fi
 

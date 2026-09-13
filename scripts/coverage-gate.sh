@@ -17,7 +17,7 @@ done
 
 # also read from config if yq available
 if [[ -f ".github/risk-gate.yml" ]] && command -v yq >/dev/null 2>&1; then
-  CFG_FLOOR=$(yq -r '.guardrails.coverage_floor // empty' .github/risk-gate.yml 2>/dev/null || echo "")
+  CFG_FLOOR=$(yq -r '.guardrails.coverage_floor // ""' .github/risk-gate.yml 2>/dev/null || echo "")
   if [[ -n "$CFG_FLOOR" && "$FLOOR" == "85" ]]; then
     FLOOR="$CFG_FLOOR"
   fi
