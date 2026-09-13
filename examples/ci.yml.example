@@ -12,6 +12,8 @@ jobs:
         with: { config: .github/risk-gate.yml, labeling: "true" }
       - name: Docs gate
         run: ./scripts/docs-gate.sh
+      - name: Plan conformance gate
+        run: ./scripts/plan-link-gate.sh --pr-number ${{ github.event.pull_request.number }}
       - name: Skills isolation
         run: ./scripts/skills-isolation.sh
       - name: Coverage gate

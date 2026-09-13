@@ -28,12 +28,33 @@ High-risk filename patterns (regex):
 
 - .*\.sql$
 
-## 2. What to check (in order)
+## 2. Three review passes (run in order — cf. VivekK plan-first pattern)
 
-1. Correctness: wrong logic, off-by-one, null handling, unhandled errors, races, broken imports.
-2. Security: auth bypass, injection, secrets in diff, broad permissions, SSRF or open redirect.
-3. Data: destructive migrations, missing rollback, non-additive schema changes. Flag sql and migration files as high-risk.
-4. Tests: missing coverage for new branches. Floor is 85 percent. Do not demand tests for docs or config-only PRs.
+Run these as separate passes. Stop early on LOW-RISK PRs after Pass A unless something looks wrong.
+
+### Pass A — Plan conformance (highest signal)
+
+The PR body must link a plan (Closes #N, Plan:/RFC:/Spec:, or a plans/ path — enforced by plan-link-gate).
+Check: does the diff implement what the linked issue/plan says? Flag scope creep, missing
+plan items, or behavior changes with no plan coverage. Business-logic deviations need
+biz validation even if the code looks correct (the AI often "knows better" — still flag it).
+If no plan is linked, say so in one line and skip to verdict.
+
+### Pass B — Bugs / correctness
+
+Wrong logic, off-by-one, null handling, unhandled errors, races, broken imports.
+Missing coverage for new branches. Floor is 85 percent. Do not demand tests for docs or config-only PRs.
+
+### Pass C — Security (always run on HIGH-RISK PRs)
+
+Auth bypass, injection, secrets in diff, broad permissions, SSRF or open redirect.
+Data: destructive migrations, missing rollback, non-additive schema changes. Flag sql and migration files as high-risk.
+
+### Preview check (UI PRs)
+
+If the diff touches UI paths, note whether a preview deploy/status is present.
+Do not block for lack of one — just state: Preview present YES/NO. Manual end-to-end
+verification happens there when needed.
 
 ## 3. What NOT to do
 
@@ -50,6 +71,7 @@ High-risk filename patterns (regex):
 
 ## 5. Repo guardrails (already enforced by CI, do not duplicate)
 
+- Plan link required on non-exempt PRs (plan-link-gate).
 - Docs markdown files must live under docs or .github (docs-gate).
 - skills, AGENTS.md and .opencode must ship in solo PRs (skills-isolation).
 Coverage floor 85 percent (coverage-gate), lint via ruff ty prettier eslint (lint-gate).

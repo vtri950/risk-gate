@@ -36,6 +36,11 @@ jobs:
           config: .github/risk-gate.yml
           labeling: "true"
 
+      - name: Plan conformance gate (review moves to planning)
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: ./scripts/plan-link-gate.sh --pr-number "$PR_NUMBER"
+
       - name: Copilot mesh orchestration
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -102,7 +107,9 @@ jobs:
           ### Copilot mesh — low-risk (risk-gate: SAFE)
 
           No risky paths matched. Copilot review requested for objective bugs only.
-          Auto-merge will engage once checks are green. Humans: merge without line-by-line re-read unless Copilot flags high-severity findings." 2>&1 || echo "::warning::Failed to post SAFE comment"
+          Pass A (plan conformance) → Pass B (bugs) → Pass C (security on demand).
+          Auto-merge will engage once checks are green. Humans: merge without line-by-line re-read unless Copilot flags high-severity findings.
+          UI PRs: check the preview deploy for manual end-to-end verification when needed." 2>&1 || echo "::warning::Failed to post SAFE comment"
             fi
             # enable auto-merge (requires repo auto-merge enabled + branch protection passing)
             gh pr merge "$PR" --auto --squash --delete-branch 2>&1 || echo "::warning::Auto-merge not enabled or blocked — merge manually once green"
