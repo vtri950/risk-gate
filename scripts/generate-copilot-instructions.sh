@@ -31,8 +31,8 @@ COVERAGE_FLOOR="85"
 if [[ -f "$CONFIG" ]]; then
   if command -v yq >/dev/null 2>&1; then
     LABEL=$(yq -r '.risk.label // "needs-human-review"' "$CONFIG")
-    mapfile -t RISKY_PATHS < <(yq -r '.risk.risky_paths[]? // empty' "$CONFIG")
-    mapfile -t RISKY_PATTERNS < <(yq -r '.risk.risky_patterns[]? // empty' "$CONFIG")
+    mapfile -t RISKY_PATHS < <(yq -r '.risk.risky_paths[]?' "$CONFIG")
+    mapfile -t RISKY_PATTERNS < <(yq -r '.risk.risky_patterns[]?' "$CONFIG")
     COVERAGE_FLOOR=$(yq -r '.guardrails.coverage_floor // 85' "$CONFIG")
   else
     RISKY_PATHS=("api/**" "mcp/**" "auth/**" "src/design-system/**" "skills/**" "AGENTS.md" ".opencode/**" "**/migrations/**")

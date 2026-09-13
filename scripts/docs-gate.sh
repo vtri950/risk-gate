@@ -21,8 +21,8 @@ ALLOWED_DIRS=("docs/" ".github/")
 ALLOWED_ROOT=("README.md" "AGENTS.md" "CONTRIBUTING.md")
 
 if [[ -f "$CONFIG" ]] && command -v yq >/dev/null 2>&1; then
-  mapfile -t ALLOWED_DIRS < <(yq -r '.guardrails.docs_allowed_dirs[]? // empty' "$CONFIG")
-  mapfile -t ALLOWED_ROOT < <(yq -r '.guardrails.docs_allowed_root_files[]? // empty' "$CONFIG")
+  mapfile -t ALLOWED_DIRS < <(yq -r '.guardrails.docs_allowed_dirs[]?' "$CONFIG")
+  mapfile -t ALLOWED_ROOT < <(yq -r '.guardrails.docs_allowed_root_files[]?' "$CONFIG")
   [[ ${#ALLOWED_DIRS[@]} -eq 0 ]] && ALLOWED_DIRS=("docs/" ".github/")
 fi
 
