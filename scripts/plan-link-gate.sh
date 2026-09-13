@@ -126,8 +126,9 @@ done
 
 PR_LABELS=""
 if [[ -n "$PR_NUMBER" ]] && command -v gh >/dev/null 2>&1; then
-  PR_LABELS=$(gh pr view "$PR_NUMBER" --json labels -q '.labels[].name' 2>/dev/null || echo "")
-  if [[ -z "$PR_LABELS" ]]; then
+  if GH_OUT=$(gh pr view "$PR_NUMBER" --json labels -q '.labels[].name' 2>/dev/null); then
+    PR_LABELS="$GH_OUT"
+  else
     echo "::warning::plan-link-gate could not read PR #$PR_NUMBER labels (gh auth? missing GITHUB_TOKEN?) — exempt-label check skipped" >&2
   fi
 fi
