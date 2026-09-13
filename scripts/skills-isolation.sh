@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
+# NOTE: no `set -u` — bash 3.2 (macOS) treats empty arrays as unbound.
 # skills-isolation.sh — forces agent skills / AGENTS.md changes into isolated PRs
 # Duckbill: "We also force any changes to agent skills / agents.md go into their own PR"
 # Usage: ./scripts/skills-isolation.sh [--base origin/main] [--files "..."]
@@ -16,16 +17,17 @@ while [[ $# -gt 0 ]]; do
 done
 
 CHANGED=()
+read_lines() { local __a="$1" __l; eval "$__a=()"; while IFS= read -r __l; do [[ -n "$__l" ]] || continue; eval "$__a+=(\"\$__l\")"; done; return 0; }
 if [[ -n "$FILES_OVERRIDE" ]]; then
   read -ra CHANGED <<< "$FILES_OVERRIDE"
 else
   if git rev-parse --verify "$BASE" >/dev/null 2>&1; then
-    mapfile -t CHANGED < <(git diff --name-only --diff-filter=ACMRT "$BASE"...HEAD 2>/dev/null || git diff --name-only HEAD~1 2>/dev/null || echo "")
+    read_lines CHANGED < <(git diff --name-only --diff-filter=ACMRT "$BASE"...HEAD 2>/dev/null || git diff --name-only HEAD~1 2>/dev/null || echo "")
   else
-    mapfile -t CHANGED < <(git diff --name-only HEAD~1 2>/dev/null || git diff --name-only --cached 2>/dev/null || echo "")
+    read_lines CHANGED < <(git diff --name-only HEAD~1 2>/dev/null || git diff --name-only --cached 2>/dev/null || echo "")
   fi
-  if [[ ${#CHANGED[@]} -eq 0 || -z "${CHANGED[0]}" ]]; then
-    mapfile -t CHANGED < <(git diff --name-only 2>/dev/null || echo "")
+  if [[ ${#CHANGED[@]} -eq 0 ]]; then
+    read_lines CHANGED < <(git diff --name-only 2>/dev/null || echo "")
   fi
 fi
 

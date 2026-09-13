@@ -7,9 +7,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - name: Risk gate
+      - name: Risk gate (P0/P1/P2 tiers + inbox)
+        id: risk
         uses: ./risk-gate
         with: { config: .github/risk-gate.yml, labeling: "true" }
+      - name: Schema gate (Jackie Luo rule)
+        run: ./scripts/schema-gate.sh ${{ github.event.pull_request.number && format('--pr-number {0}', github.event.pull_request.number) || '' }}
       - name: Docs gate
         run: ./scripts/docs-gate.sh
       - name: Plan conformance gate
@@ -18,7 +21,19 @@ jobs:
         run: ./scripts/plan-link-gate.sh --pr-number ${{ github.event.pull_request.number }}
       - name: Skills isolation
         run: ./scripts/skills-isolation.sh
+      - name: Review noise meter (Gergely/Jacob/Uber lesson)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./scripts/review-noise-meter.sh --pr-number ${{ github.event.pull_request.number }} --json
       - name: Coverage gate
         run: ./scripts/coverage-gate.sh --floor 85
       - name: Lint
         run: ./scripts/lint-gate.sh
+      - name: Audit bundle (SOC2 evidence)
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./scripts/audit-bundle.sh --pr-number ${{ github.event.pull_request.number }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: risk-gate-audit, path: audit/, retention-days: 365 }

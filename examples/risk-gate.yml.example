@@ -10,6 +10,11 @@ risk:
     - "AGENTS.md"
   risky_patterns:
     - ".*migration.*\\.sql$"
+  tiers:
+    p0_label: "needs-human-review"
+    p1_label: "needs-human-advisory"
+    p1_paths: ["src/**", "lib/**", "packages/**", "internal/**"]
+    p1_patterns: []
 guardrails:
   coverage_floor: 85
   docs_allowed_dirs: ["docs/"]

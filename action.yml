@@ -24,10 +24,13 @@ inputs:
 
 outputs:
   risky:
-    description: "true if PR touches risky paths"
+    description: "true if PR touches P0 risky paths (blocking)"
     value: ${{ steps.gate.outputs.risky }}
+  tier:
+    description: "P0/P1/P2 blast-radius tier"
+    value: ${{ steps.gate.outputs.tier }}
   label:
-    description: "Label that was evaluated"
+    description: "Effective label (P0 needs-human-review, P1 needs-human-advisory, P2 copilot-safe)"
     value: ${{ steps.gate.outputs.label }}
 
 runs:
@@ -52,17 +55,25 @@ runs:
         cat /tmp/risk-gate.json
         RISKY=$(python3 -c "import json; print(str(json.load(open('/tmp/risk-gate.json')).get('risky', False)).lower())")
         LABEL=$(python3 -c "import json; print(json.load(open('/tmp/risk-gate.json')).get('label','needs-human-review'))")
+        TIER=$(python3 -c "import json; print(json.load(open('/tmp/risk-gate.json')).get('tier','P2'))")
         echo "risky=$RISKY" >> "$GITHUB_OUTPUT"
         echo "label=$LABEL" >> "$GITHUB_OUTPUT"
-        if [[ "${{ inputs.labeling }}" == "true" && "$RISKY" == "true" ]]; then
+        echo "tier=$TIER" >> "$GITHUB_OUTPUT"
+        if [[ "${{ inputs.labeling }}" == "true" && "$TIER" != "P2" ]]; then
+          echo "Tier $TIER detected — adding label $LABEL"
+          gh pr edit "${{ github.event.pull_request.number }}" --add-label "$LABEL" 2>&1 || \
+          gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels" -f labels[]="$LABEL" 2>&1 || echo "::warning::Failed to add label"
+        elif [[ "${{ inputs.labeling }}" == "true" && "$RISKY" == "true" ]]; then
           echo "Risky PR detected — adding label $LABEL"
           gh pr edit "${{ github.event.pull_request.number }}" --add-label "$LABEL" 2>&1 || \
           gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels" -f labels[]="$LABEL" 2>&1 || echo "::warning::Failed to add label"
         fi
-        if [[ "$RISKY" == "true" ]]; then
-          echo "::notice::RISKY — requires human review ($LABEL)"
+        if [[ "$TIER" == "P0" ]]; then
+          echo "::notice::P0 RISKY — requires human review ($LABEL)"
+        elif [[ "$TIER" == "P1" ]]; then
+          echo "::notice::P1 ADVISORY — human review recommended ($LABEL)"
         else
-          echo "::notice::SAFE — no human review required"
+          echo "::notice::P2 SAFE — no human review required"
         fi
         # don't fail the job, let branch protection handle it
         exit 0

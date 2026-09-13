@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
+# NOTE: no `set -u` — bash 3.2 (macOS) treats empty arrays as unbound.
 # plan-link-gate.sh — deterministic plan-conformance gate (no LLM key)
 # Idea: review shifts to planning, not the PR stage. A PR that implements
 # a plan must link that plan, so reviewers (human or Copilot) can check
@@ -77,16 +78,17 @@ fi
 
 # --- changed files ---
 CHANGED=()
+read_lines() { local __a="$1" __l; eval "$__a=()"; while IFS= read -r __l; do [[ -n "$__l" ]] || continue; eval "$__a+=(\"\$__l\")"; done; return 0; }
 if [[ -n "$FILES_OVERRIDE" ]]; then
   read -ra CHANGED <<< "$FILES_OVERRIDE"
 else
   if git rev-parse --verify "$BASE" >/dev/null 2>&1; then
-    mapfile -t CHANGED < <(git diff --name-only --diff-filter=ACMRT "$BASE"...HEAD 2>/dev/null || git diff --name-only HEAD~1 2>/dev/null || echo "")
+    read_lines CHANGED < <(git diff --name-only --diff-filter=ACMRT "$BASE"...HEAD 2>/dev/null || git diff --name-only HEAD~1 2>/dev/null || echo "")
   else
-    mapfile -t CHANGED < <(git diff --name-only HEAD~1 2>/dev/null || git diff --name-only --cached 2>/dev/null || echo "")
+    read_lines CHANGED < <(git diff --name-only HEAD~1 2>/dev/null || git diff --name-only --cached 2>/dev/null || echo "")
   fi
-  if [[ ${#CHANGED[@]} -eq 0 || -z "${CHANGED[0]:-}" ]]; then
-    mapfile -t CHANGED < <(git diff --name-only 2>/dev/null || echo "")
+  if [[ ${#CHANGED[@]} -eq 0 ]]; then
+    read_lines CHANGED < <(git diff --name-only 2>/dev/null || echo "")
   fi
 fi
 FILTERED=()
