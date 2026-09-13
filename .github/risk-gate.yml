@@ -32,7 +32,7 @@ guardrails:
     - "AGENTS.md"
   skills_isolation: true
 
-# Plan-first review (VivekK pattern: review moves to planning, PR proves conformance)
+# Plan-first review: review moves to planning, PR proves conformance
 # Enforced by scripts/plan-link-gate.sh — deterministic, no LLM key.
 plan:
   require_link: true
