@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 set -eo pipefail
 # NOTE: no `set -u` — bash 3.2 (macOS) treats empty arrays as unbound.
-# schema-gate.sh — Jackie Luo (Sigil) lesson: "all that really matters is the database schema."
-# Data/state is rigid; stateless logic is fluid/regenerable. So schema + API contracts
-# always deserve human review, even when risk-gate tiers miss them.
+# schema-gate.sh — schema-first: data/state is rigid; stateless logic is fluid/regenerable.
+# So schema + API contracts always deserve human review, even when risk-gate tiers miss them.
 #
 # Detects: prisma/drizzle/alembic/django migrations, *.sql, ORM models,
 # OpenAPI/MCP/proto/GraphQL contracts, mcp/** skills touching state.
@@ -118,7 +117,7 @@ result = {
     "changed_files": files,
     "reason": ("no schema/contract touch" if not hits else
                ("annotated" if annotated else "schema/contract touched without Schema:/Migration: annotation")),
-    "hint": "Jackie Luo rule: data is rigid, logic is fluid. Schema/API changes need human review + rollback plan. Add 'Schema: <what changed + rollback>' to PR body.",
+    "hint": "Schema-first rule: data is rigid, logic is fluid. Schema/API changes need human review + rollback plan. Add 'Schema: <what changed + rollback>' to PR body.",
 }
 if as_json:
     print(json.dumps(result, indent=2))

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# review-noise-meter.sh — Gergely #5 / Jacob #4 / Uber uReview lesson:
-# "How do you evaluate how useful vs noisy AI code reviews are?"
+# review-noise-meter.sh — review-noise lesson:
+# "How do you evaluate how useful vs noisy automated code reviews are?"
 #
 # Deterministic, no LLM key. Pulls PR review comments via `gh` and scores noise:
 #   - total bot comments vs human comments
-#   - bot-on-bot chatter (Bun Robobun failure mode: bots replying to bots)
+#   - bot-on-bot chatter (failure mode: bots replying to bots)
 #   - duplicate/near-duplicate suggestions (needs dedupe)
-#   - defensive-crap patterns (Jacob: "consider adding...", "you might want...")
+#   - defensive-nit patterns ("consider adding...", "you might want...")
 #   - unaddressed rate (proxy for usefulness when reactions absent)
 #
 # Usage:
@@ -115,7 +115,7 @@ result = {
     "defensive_pattern_hits": def_count,
     "noise_score": noise_score,
     "budget": {"max_bot_comments": max_bot},
-    "hint": "Uber uReview lesson: grade + dedupe + confidence-filter bot comments. Jacob lesson: bulk defensive nits = bloat. Keep high/medium severity only; batch nits into one bullet.",
+    "hint": "Grade + dedupe + confidence-filter bot comments. Bulk defensive nits = bloat. Keep high/medium severity only; batch nits into one bullet.",
 }
 if as_json:
     print(json.dumps(result, indent=2))

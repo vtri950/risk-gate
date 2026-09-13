@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eo pipefail
 # NOTE: no `set -u` — bash 3.2 (macOS) treats empty arrays as unbound.
-# audit-bundle.sh — answers James @jrowe6720: "What do you tell your soc2 auditor?"
+# audit-bundle.sh — collects SOC2 evidence: every deterministic gate decision in one artifact.
 #
 # Collects every deterministic gate decision into one artifact:
 #   risk tier + hits + inbox, plan-link, schema-gate, docs/skills gates,

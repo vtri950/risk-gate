@@ -11,7 +11,7 @@ jobs:
         id: risk
         uses: ./risk-gate
         with: { config: .github/risk-gate.yml, labeling: "true" }
-      - name: Schema gate (Jackie Luo rule)
+      - name: Schema gate (schema-first)
         run: ./scripts/schema-gate.sh ${{ github.event.pull_request.number && format('--pr-number {0}', github.event.pull_request.number) || '' }}
       - name: Docs gate
         run: ./scripts/docs-gate.sh
@@ -21,7 +21,7 @@ jobs:
         run: ./scripts/plan-link-gate.sh --pr-number ${{ github.event.pull_request.number }}
       - name: Skills isolation
         run: ./scripts/skills-isolation.sh
-      - name: Review noise meter (Gergely/Jacob/Uber lesson)
+      - name: Review noise meter
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: ./scripts/review-noise-meter.sh --pr-number ${{ github.event.pull_request.number }} --json

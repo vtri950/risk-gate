@@ -7,7 +7,7 @@ set -eo pipefail
 #   ./scripts/risk-gate.sh [--base origin/main] [--config .github/risk-gate.yml] [--json] [--label] [--check] [--inbox]
 #   ./scripts/risk-gate.sh --files "api/foo.ts auth/bar.ts" # for testing
 #
-# Tiers (Anthropic/OpenAI + Uber Inbox lesson from Gergely thread):
+# Tiers (blast-radius triage + review-inbox prioritization):
 #   P0 = blocking human review (needs-human-review) — auth, API, schema, skills
 #   P1 = advisory human review (needs-human-advisory) — src/lib/packages, non-trivial logic
 #   P2 = SAFE (copilot-safe) — docs, chore, small UI copy
@@ -17,8 +17,7 @@ set -eo pipefail
 #   1 = P0 risky (needs-human-review)
 #   2 = error
 #
-# Inspired by DuckbillHQ thread: shell script adds github label for risky touches
-# https://x.com/mikejulian/status/2096450476170694785
+# Deterministic labeling: shell script adds a GitHub label for risky touches
 
 CONFIG=".github/risk-gate.yml"
 BASE="origin/main"

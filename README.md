@@ -1,6 +1,6 @@
 # risk-gate — Ditch Code Review (Mostly)
 
-Deterministic toolkit implementing the DuckbillHQ pattern from [Mike Julian's thread](https://x.com/mikejulian/status/2096450476170694785):
+Deterministic toolkit implementing the risk-based review pattern:
 
 > 60 open PRs → 2 days of review → switched to risk-based review + strict guardrails → **353 → 684 PRs (+94%)**, median **1h** (vs 26h for human-reviewed)
 
@@ -14,8 +14,8 @@ No AI for routing — shell scripts + GitHub labels. Expensive guardrails buy ba
 |---|---|---|
 | **#1 Risk Gate (P0/P1/P2)** | `scripts/risk-gate.sh` + `action.yml` | Tiers: P0 `needs-human-review` (blocking: `api/mcp/auth/design-system/skills/migrations`), P1 `needs-human-advisory` (`src/lib/packages/internal`), P2 `copilot-safe`. JSON `inbox` sorts P0→P1→P2 (Uber Inbox lesson) |
 | **#1b Copilot Mesh** | `.github/workflows/copilot-mesh.yml` + `scripts/generate-copilot-instructions.sh` | Cosmos-style orchestration on native Copilot: SAFE → `copilot-safe` + auto-merge, RISKY → Pair Reviewer checklist. No LLM key |
-| **#1c Noise Meter** | `scripts/review-noise-meter.sh --pr-number N` | Gergely/Jacob/Uber lesson: scores bot-comment noise (bot count, dupes, bot-on-bot Robobun mode, defensive-crap patterns). `--fail` blocks noisy AI reviews |
-| **#1d Schema Gate** | `scripts/schema-gate.sh` | Jackie Luo rule: `prisma/drizzle/migrations/*.sql/ORM models/OpenAPI/MCP/proto/GraphQL` always need `Schema:`/`BREAKING_MIGRATION` + rollback in PR body |
+| **#1c Noise Meter** | `scripts/review-noise-meter.sh --pr-number N` | Scores bot-comment noise (bot count, dupes, bot-on-bot, defensive-nit patterns). `--fail` blocks noisy automated reviews |
+| **#1d Schema Gate** | `scripts/schema-gate.sh` | Schema-first rule: `prisma/drizzle/migrations/*.sql/ORM models/OpenAPI/MCP/proto/GraphQL` always need `Schema:`/`BREAKING_MIGRATION` + rollback in PR body |
 | **#2a Docs Gate** | `scripts/docs-gate.sh` | Fails if `*.md` outside `docs/` — prevents context poisoning |
 | **#2b Skills Isolation** | `scripts/skills-isolation.sh` | Forces `skills/`, `AGENTS.md`, `.opencode/` into solo PRs |
 | **#2c Coverage Gate** | `scripts/coverage-gate.sh --floor 85` | Enforces 85% floor |
@@ -101,7 +101,7 @@ node auditor/skills-auditor.mjs --dir skills --prune
 
 ## SOC2 note
 
-For auditors asking "where's review?" (James @jrowe6720, 60K views): `./scripts/audit-bundle.sh --pr-number N` collects risk tier + inbox, plan-link, schema-gate, docs/skills, labels/approvals into `audit/risk-gate-<sha>/audit-bundle.json + AUDIT.md`. Upload `audit/` as a CI artifact with 365-day retention. P0 PRs still require human approval via branch protection on `needs-human-review`. P2 PRs merge with deterministic guardrails; the bundle is the evidence.
+For auditors asking "where's review?": `./scripts/audit-bundle.sh --pr-number N` collects risk tier + inbox, plan-link, schema-gate, docs/skills, labels/approvals into `audit/risk-gate-<sha>/audit-bundle.json + AUDIT.md`. Upload `audit/` as a CI artifact with 365-day retention. P0 PRs still require human approval via branch protection on `needs-human-review`. P2 PRs merge with deterministic guardrails; the bundle is the evidence.
 
 ## Install as submodule
 
