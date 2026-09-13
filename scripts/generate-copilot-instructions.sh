@@ -77,7 +77,7 @@ TMP_OUT=$(mktemp)
     for r in "${RISKY_PATTERNS[@]}"; do printf '%s\n' "- $r"; done
   fi
   printf '%s\n' ''
-  printf '%s\n' '## 2. Three review passes (run in order — cf. VivekK plan-first pattern)'
+  printf '%s\n' '## 2. Three review passes (run in order)'
   printf '%s\n' ''
   printf '%s\n' 'Run these as separate passes. Stop early on LOW-RISK PRs after Pass A unless something looks wrong.'
   printf '%s\n' ''

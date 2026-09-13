@@ -28,7 +28,7 @@ High-risk filename patterns (regex):
 
 - .*\.sql$
 
-## 2. Three review passes (run in order — cf. VivekK plan-first pattern)
+## 2. Three review passes (run in order)
 
 Run these as separate passes. Stop early on LOW-RISK PRs after Pass A unless something looks wrong.
 

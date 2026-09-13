@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # plan-link-gate.sh — deterministic plan-conformance gate (no LLM key)
-# Open-source take on VivekK's Ref conformance checks:
-#   https://x.com/VivekxK/status/2096592325895958850
 # Idea: review shifts to planning, not the PR stage. A PR that implements
 # a plan must link that plan, so reviewers (human or Copilot) can check
 # "does the implementation match the intent of the plan?"
@@ -129,6 +127,9 @@ done
 PR_LABELS=""
 if [[ -n "$PR_NUMBER" ]] && command -v gh >/dev/null 2>&1; then
   PR_LABELS=$(gh pr view "$PR_NUMBER" --json labels -q '.labels[].name' 2>/dev/null || echo "")
+  if [[ -z "$PR_LABELS" ]]; then
+    echo "::warning::plan-link-gate could not read PR #$PR_NUMBER labels (gh auth? missing GITHUB_TOKEN?) — exempt-label check skipped" >&2
+  fi
 fi
 
 EXEMPT_REASON=""
@@ -204,7 +205,7 @@ fi
 
 # fail
 MSG="❌ plan-link-gate FAILED: non-exempt PR has no linked plan."
-HINT="Fix: add 'Closes #N' or a 'Plan: <path|URL>' line to the PR body (plans/, docs/plans/, docs/rfcs/), or include the plan file in this PR. See https://x.com/VivekxK/status/2096592325895958850 (review moves to planning; PR must show conformance)."
+HINT="Fix: add 'Closes #N' or a 'Plan: <path|URL>' line to the PR body (plans/, docs/plans/, docs/rfcs/), or include the plan file in this PR (review moves to planning; PR must show conformance)."
 if [[ "$OUTPUT_JSON" == true ]]; then
   emit_json fail "$MSG $HINT"
 else

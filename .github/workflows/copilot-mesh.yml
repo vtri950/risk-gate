@@ -38,6 +38,7 @@ jobs:
 
       - name: Plan conformance gate (review moves to planning)
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: ./scripts/plan-link-gate.sh --pr-number "$PR_NUMBER"
 
