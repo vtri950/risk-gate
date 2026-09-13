@@ -4,6 +4,10 @@ Deterministic toolkit implementing the DuckbillHQ pattern from [Mike Julian's th
 
 > 60 open PRs → 2 days of review → switched to risk-based review + strict guardrails → **353 → 684 PRs (+94%)**, median **1h** (vs 26h for human-reviewed)
 
+Plan-first layer from [Vivek Karuturi's thread](https://x.com/VivekxK/status/2096592325895958850): review moves to planning, PRs prove conformance (plan link) + pass separate bug / security / lint-test checks + preview deploy for UI spot-checks.
+
+> 60 open PRs → 2 days of review → switched to risk-based review + strict guardrails → **353 → 684 PRs (+94%)**, median **1h** (vs 26h for human-reviewed)
+
 No AI for routing — shell scripts + GitHub labels. Expensive guardrails buy back safety.
 
 ## What you get (100%)
@@ -16,6 +20,7 @@ No AI for routing — shell scripts + GitHub labels. Expensive guardrails buy ba
 | **#2b Skills Isolation** | `scripts/skills-isolation.sh` | Forces `skills/`, `AGENTS.md`, `.opencode/` into solo PRs |
 | **#2c Coverage Gate** | `scripts/coverage-gate.sh --floor 85` | Enforces 85% floor |
 | **#2d Lint Gate** | `scripts/lint-gate.sh` | Runs `ruff/ty/prettier/eslint` with max rules |
+| **#4 Plan-Conformance Gate** | `scripts/plan-link-gate.sh` | Requires non-exempt PRs to link a plan (`Closes #N`, `Plan:`/`RFC:`, or a `plans/` path) — deterministic take on VivekK's Ref conformance checks |
 | **#3 Skills Auditor** | `auditor/skills-auditor.mjs` | Evals which skills are obsolete vs LLM knowledge — PRUNE/REWRITE/KEEP |
 
 ## Quick start (1 minute per repo)
@@ -39,6 +44,7 @@ jobs:
         with: { fetch-depth: 0 }
       - uses: ./risk-gate  # or copy action.yml locally
       - run: ./scripts/docs-gate.sh
+      - run: ./scripts/plan-link-gate.sh --pr-number ${{ github.event.pull_request.number }}
       - run: ./scripts/skills-isolation.sh
       - run: ./scripts/coverage-gate.sh --floor 85
 ```

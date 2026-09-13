@@ -32,6 +32,29 @@ guardrails:
     - "AGENTS.md"
   skills_isolation: true
 
+# Plan-first review (VivekK pattern: review moves to planning, PR proves conformance)
+# Enforced by scripts/plan-link-gate.sh — deterministic, no LLM key.
+plan:
+  require_link: true
+  min_lines_for_plan: 0 # set e.g. 50 to exempt tiny PRs
+  plan_paths:
+    - "plans/**"
+    - "docs/plans/**"
+    - "docs/plan/**"
+    - "docs/rfcs/**"
+    - "docs/rfc/**"
+    - ".github/plans/**"
+    - "ref.plan.md"
+    - "PLAN.md"
+  exempt_paths:
+    - "docs/**"
+    - "*.md"
+    - ".github/copilot-instructions.md"
+  exempt_labels:
+    - "chore"
+    - "deps"
+    - "dependabot"
+
 auditor:
   skills_dir: "skills"
   # eval will flag skills where LLM already knows the instruction without the skill

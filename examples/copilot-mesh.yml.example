@@ -34,6 +34,10 @@ jobs:
         with:
           config: .github/risk-gate.yml
           labeling: "true"
+      - name: Plan conformance gate (review moves to planning)
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: ./scripts/plan-link-gate.sh --pr-number "$PR_NUMBER"
       - name: Mesh orchestration
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -62,7 +66,8 @@ jobs:
             if [[ "$ALREADY" == false ]]; then
               gh pr comment "$PR" --body "$MARKER
           ### Copilot mesh — low-risk (risk-gate: SAFE)
-          Copilot review requested. Auto-merge engages once checks are green." || true
+          Copilot review requested. Auto-merge engages once checks are green.
+          UI PRs: check the preview deploy for manual end-to-end verification when needed." || true
             fi
             gh pr merge "$PR" --auto --squash --delete-branch || true
           fi

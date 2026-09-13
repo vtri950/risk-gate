@@ -14,3 +14,8 @@ guardrails:
   coverage_floor: 85
   docs_allowed_dirs: ["docs/"]
   skills_isolation: true
+plan:
+  require_link: true
+  plan_paths: ["plans/**", "docs/plans/**", "docs/rfcs/**"]
+  exempt_paths: ["docs/**", "*.md"]
+  exempt_labels: ["chore", "deps", "dependabot"]
