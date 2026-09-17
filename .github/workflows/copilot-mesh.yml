@@ -42,6 +42,18 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: ./scripts/plan-link-gate.sh --pr-number "$PR_NUMBER"
 
+      - name: Handoff gate (definition-of-done)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: ./scripts/handoff-gate.sh --pr-number "$PR_NUMBER"
+
+      - name: Prevention gate (retro trail)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: ./scripts/prevention-gate.sh --pr-number "$PR_NUMBER"
+
       - name: Copilot mesh orchestration
         env:
           GITHUB_TOKEN: ${{ github.token }}

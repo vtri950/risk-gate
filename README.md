@@ -20,6 +20,8 @@ No AI for routing — shell scripts + GitHub labels. Expensive guardrails buy ba
 | **#2b Skills Isolation** | `scripts/skills-isolation.sh` | Forces `skills/`, `AGENTS.md`, `.opencode/` into solo PRs |
 | **#2c Coverage Gate** | `scripts/coverage-gate.sh --floor 85` | Enforces 85% floor |
 | **#2d Lint Gate** | `scripts/lint-gate.sh` | Runs `ruff/ty/prettier/eslint` with max rules |
+| **#2e Handoff Gate** | `scripts/handoff-gate.sh` | Definition-of-done: non-exempt PRs need verify steps; UI/perf touches need an artifact (screenshot/video/perf numbers) |
+| **#2f Prevention Gate** | `scripts/prevention-gate.sh` | Retro trail: fix PRs need `Prevention: lint\|hook\|ci\|test\|docs\|judgment-call` so the error becomes impossible next time |
 | **#4 Plan-Conformance Gate** | `scripts/plan-link-gate.sh` | Requires non-exempt PRs to link a plan (`Closes #N`, `Plan:`/`RFC:`, or a `plans/` path) |
 | **#3 Skills Auditor** | `auditor/skills-auditor.mjs` | Evals which skills are obsolete vs LLM knowledge — PRUNE/REWRITE/KEEP |
 
@@ -45,6 +47,8 @@ jobs:
       - uses: ./risk-gate  # or copy action.yml locally
       - run: ./scripts/docs-gate.sh
       - run: ./scripts/plan-link-gate.sh --pr-number ${{ github.event.pull_request.number }}
+      - run: ./scripts/handoff-gate.sh --pr-number ${{ github.event.pull_request.number }}
+      - run: ./scripts/prevention-gate.sh --pr-number ${{ github.event.pull_request.number }}
       - run: ./scripts/skills-isolation.sh
       - run: ./scripts/coverage-gate.sh --floor 85
 ```
