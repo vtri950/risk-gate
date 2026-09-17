@@ -71,3 +71,46 @@ auditor:
   skills_dir: "skills"
   # eval will flag skills where LLM already knows the instruction without the skill
   model: "auto" # uses OPENAI_API_KEY / ANTHROPIC_API_KEY if present, else heuristic
+
+# Handoff definition-of-done: worker handoffs without acceptance criteria bounce.
+# Enforced by scripts/handoff-gate.sh — deterministic, no LLM key.
+handoff:
+  require_verify: true
+  ui_patterns:
+    - "*.tsx"
+    - "*.jsx"
+    - "*.css"
+    - "*.scss"
+    - "**/components/**"
+    - "*perf*"
+    - "*benchmark*"
+  artifact_keywords:
+    - "screenshot"
+    - "video"
+    - "screencast"
+    - "perf"
+    - "trace"
+    - "flamegraph"
+    - "preview"
+  exempt_paths:
+    - "docs/**"
+    - "*.md"
+    - ".github/copilot-instructions.md"
+  exempt_labels:
+    - "chore"
+    - "deps"
+    - "dependabot"
+
+# Retro trail: fix PRs record what makes the error impossible next time.
+# Enforced by scripts/prevention-gate.sh — deterministic, no LLM key.
+prevention:
+  enabled: true
+  valid_values: "lint|hook|ci|test|docs|existing-gate|judgment-call"
+  exempt_paths:
+    - "docs/**"
+    - "*.md"
+    - ".github/copilot-instructions.md"
+  exempt_labels:
+    - "chore"
+    - "deps"
+    - "dependabot"

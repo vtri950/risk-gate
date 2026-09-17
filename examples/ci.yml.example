@@ -19,6 +19,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: ./scripts/plan-link-gate.sh --pr-number ${{ github.event.pull_request.number }}
+      - name: Handoff gate (definition-of-done)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./scripts/handoff-gate.sh --pr-number ${{ github.event.pull_request.number }}
+      - name: Prevention gate (retro trail)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./scripts/prevention-gate.sh --pr-number ${{ github.event.pull_request.number }}
       - name: Skills isolation
         run: ./scripts/skills-isolation.sh
       - name: Review noise meter

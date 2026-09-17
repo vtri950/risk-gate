@@ -24,3 +24,14 @@ plan:
   plan_paths: ["plans/**", "docs/plans/**", "docs/rfcs/**"]
   exempt_paths: ["docs/**", "*.md"]
   exempt_labels: ["chore", "deps", "dependabot"]
+handoff:
+  require_verify: true
+  ui_patterns: ["*.tsx", "*.jsx", "*.css", "**/components/**", "*perf*"]
+  artifact_keywords: ["screenshot", "video", "perf", "trace", "preview"]
+  exempt_paths: ["docs/**", "*.md"]
+  exempt_labels: ["chore", "deps", "dependabot"]
+prevention:
+  enabled: true
+  valid_values: "lint|hook|ci|test|docs|existing-gate|judgment-call"
+  exempt_paths: ["docs/**", "*.md"]
+  exempt_labels: ["chore", "deps", "dependabot"]
